@@ -28,7 +28,7 @@
 <meta property="og:description" content="记录 Stein Variational Gradient Descent 的一些公式推理过程。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-10-03T14:13:00.000Z">
-<meta property="article:modified_time" content="2023-10-28T17:13:38.612Z">
+<meta property="article:modified_time" content="2023-10-29T11:43:31.006Z">
 <meta property="article:author" content="Li zhijian">
 <meta property="article:tag" content="机器学习">
 <meta property="article:tag" content="贝叶斯学习">
@@ -189,7 +189,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-10-29 01:13:38" itemprop="dateModified" datetime="2023-10-29T01:13:38+08:00">2023-10-29</time>
+                <time title="Modified: 2023-10-29 19:43:31" itemprop="dateModified" datetime="2023-10-29T19:43:31+08:00">2023-10-29</time>
               </span>
 
           
@@ -368,6 +368,144 @@ q}\left[\nabla_{\epsilon}\log{p_{\left[\mathbf{T}^{-1}\right]}(\mathbf{x})}\righ
 + \nabla_{\mathbf{x}}\boldsymbol{\phi(\mathbf{x})} \right)\right].
 \end{align*}
 \]</span> 公式(4)证明完毕。</p>
+<h3 id="theorem-3.1的意义">Theorem 3.1的意义</h3>
+<ol type="1">
+<li>SVGD方法假设存在一个变换函数<span class="math inline">\(\mathbf{T}\)</span>（或表达为<span class="math inline">\(\mathbf{T}_{q,p}\)</span>），该函数被迭代地作用于一个演化分布
+<span class="math inline">\(q\)</span>，使得每一次经过变换后的分布<span class="math inline">\(q_{[\mathbf{T}]}\)</span>能够更接近目标分布<span class="math inline">\(p\)</span>。</li>
+<li>该变换函数<span class="math inline">\(\mathbf{T}\)</span>的具体形式被定义为：<span class="math inline">\(\mathbf{T}(\mathbf{x}) = \mathbf{x} + \epsilon
+\boldsymbol{\phi(\mathbf{x})}\)</span>，其中<span class="math inline">\(\boldsymbol{\phi(\mathbf{x})}\)</span>代表了变换的方向函数。</li>
+<li>在上述假设下，最优<span class="math inline">\(\boldsymbol{\phi(\mathbf{x})}\)</span>是使得<span class="math inline">\(q_{[\mathbf{T}]}\)</span>与<span class="math inline">\(p\)</span>之间的KL散度下降最快：<span class="math inline">\(\arg\min_{\boldsymbol{\phi}}{\nabla_{\epsilon}\left.\text{KL}(q_{[\mathbf{T}]}
+\| p)\right|_{\epsilon = 0}}.\)</span></li>
+<li>经过数学推导，原问题可进一步表达为： <span class="math display">\[
+\nabla_{\epsilon}\left.\text{KL}(q_{[\mathbf{T}]} \| p)\right|_{\epsilon
+= 0} = - \mathbb{E}_{\mathbf{x}\sim q}\left[ \text{trace}\left(
+\nabla_{\mathbf{x}}\log{p(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
++ \nabla_{\mathbf{x}}\boldsymbol{\phi(\mathbf{x})} \right)\right].
+\]</span></li>
+<li>也就是说，现在需要求解: <span class="math display">\[
+\arg\max_{\boldsymbol{\phi}} \mathbb{E}_{\mathbf{x}\sim q}\left[
+\text{trace}\left(
+\nabla_{\mathbf{x}}\log{p(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
++ \nabla_{\mathbf{x}}\boldsymbol{\phi(\mathbf{x})}
+\right)\right].\tag{11}
+\]</span></li>
+</ol>
+<h3 id="lemma-3.2">Lemma 3.2</h3>
+<p>在SVGD论文中，引理3.2的含义是：如果<span class="math inline">\(\boldsymbol{\phi}\)</span>限定为再生核希尔伯特空间（RKHS）的单位球内，那么问题(11)的解为：
+<span class="math display">\[
+\boldsymbol{\phi}^*_{q,p}(\mathbf{x}) = \mathbb{E}_{\mathbf{y}\sim
+q}\left[ k(\mathbf{y}, \mathbf{x})\nabla_{\mathbf{y}}\log{p(\mathbf{y})}
++ \nabla_{\mathbf{y}}k(\mathbf{y}, \mathbf{x}) \right], \tag{12}
+\]</span> 其中<span class="math inline">\(k\)</span>为RKHS的再生核函数，经常使用的是高斯核函数。</p>
+<h3 id="如何理解lemma-3.2">如何理解Lemma 3.2</h3>
+<blockquote>
+<p>该部分内容需要了解论文：A Kernelized Stein Discrepancy for
+Goodness-of-fit Tests</p>
+</blockquote>
+<h5 id="stein-class-and-steins-operator">Stein class and Stein's
+operator</h5>
+<p>概率分布<span class="math inline">\(p\)</span>关于函数<span class="math inline">\(f:\mathbb{R}\to\mathbb{R}\)</span>的Stein's
+operator被定义为： <span class="math display">\[\mathcal{A}_{p}f(x) =
+\nabla_x \log{p(x)}f(x) + \nabla_x f(x), \tag{13}\]</span></p>
+<p>对于向量函数<span class="math inline">\(\boldsymbol{f}:\mathbb{R}^d\to\mathbb{R}^d\)</span>，其计算结果为一个矩阵：
+<span class="math display">\[\mathcal{A}_{p}\boldsymbol{f}(\mathbf{x}) =
+\nabla_{\mathbf{x}} \log{p(\mathbf{x})}\boldsymbol{f}(\mathbf{x})^\top +
+\nabla_{\mathbf{x}} \boldsymbol{f}(\mathbf{x}). \tag{14}\]</span></p>
+<p>如果函数<span class="math inline">\(f\)</span>是光滑的且与概率分布<span class="math inline">\(p\)</span>满足： <span class="math display">\[\int{\nabla_x \left( f(x)p(x) \right)\mathrm{d}x}
+= 0, \tag{15} \]</span> 则称<span class="math inline">\(f\)</span>属于概率分布<span class="math inline">\(p\)</span>的Stein class（对于向量函数<span class="math inline">\(\boldsymbol{f}:\mathbb{R}^d\to\mathbb{R}^d\)</span>有类似结论，等式右边就是一个全零矩阵，如果变量是向量<span class="math inline">\(\mathbf{x}\)</span>，那么等式右边就是一个全零向量）。</p>
+<p>公式(15)的描述的条件是比较好满足的，if function <span class="math inline">\(f\)</span> is smooth with proper zero-boundary:
+<span class="math display">\[
+\nabla_x C = \nabla_x \int{f(x)p(x)\mathrm{d}x} = \int{\nabla_x \left(
+f(x)p(x) \right)\mathrm{d}x} = 0,
+\]</span> 其中<span class="math inline">\(C\)</span>表示一个常数。</p>
+<h5 id="方向函数的范数">方向函数的范数</h5>
+<p>不严谨地说，公式(11)描述的问题其实是某种范数，接下来我们将通过推导展现这一点。</p>
+<p>假设方向函数<span class="math inline">\(\boldsymbol{\phi}\)</span> is
+smooth with proper zero-boundary，那么基于前面关于 stein class
+的讨论，可以得到： <span class="math display">\[
+\begin{align*}{\tag{16}}
+&amp; \int{\nabla_{\mathbf{x}}\left( \boldsymbol{\phi}(\mathbf{x})
+q(\mathbf{x}) \right) \mathrm{d}\mathbf{x}}\\
+=&amp; \int{
+\left(\nabla_{\mathbf{x}}\boldsymbol{\phi}(\mathbf{x})q(\mathbf{x}) +
+\boldsymbol{\phi}(\mathbf{x})\nabla_{\mathbf{x}}q(\mathbf{x})\right)
+\mathrm{d}\mathbf{x}} \\
+=&amp; \int{ \left(
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}^\top\boldsymbol{\phi}(\mathbf{x})
++
+\nabla_{\mathbf{x}}\boldsymbol{\phi}(\mathbf{x})  \right)\mathrm{d}q(\mathbf{x})
+}\\
+=&amp; \mathbb{E}_{\mathbf{x} \sim q}\left[
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}^\top\boldsymbol{\phi}(\mathbf{x})
++ \nabla_{\mathbf{x}}\boldsymbol{\phi}(\mathbf{x}) \right]\\
+=&amp; \mathbf{O},
+\end{align*}
+\]</span> 这里用<span class="math inline">\(\mathbf{O}\)</span>表示全零矩阵。</p>
+<p>再次回顾公式(11)定义的问题，可以经过推理得到： <span class="math display">\[
+\begin{align*}{\tag{17}}
+&amp; \arg\max_{\boldsymbol{\phi}} \mathbb{E}_{\mathbf{x}\sim q}\left[
+\text{trace}\left(
+\nabla_{\mathbf{x}}\log{p(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
++ \nabla_{\mathbf{x}}\boldsymbol{\phi(\mathbf{x})} \right)\right] \\
+=&amp; \arg\max_{\boldsymbol{\phi}} \mathbb{E}_{\mathbf{x}\sim q}\left[
+\text{trace}\left(
+\nabla_{\mathbf{x}}\log{p(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
++ \nabla_{\mathbf{x}}\boldsymbol{\phi(\mathbf{x})} \right)\right] - \\
+&amp; \mathbb{E}_{\mathbf{x}\sim q}\left[ \text{trace}\left(
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
++ \nabla_{\mathbf{x}}\boldsymbol{\phi(\mathbf{x})} \right)\right] \\
+=&amp; \arg\max_{\boldsymbol{\phi}} \mathbb{E}_{\mathbf{x}\sim q}\left[
+\text{trace}\left(
+\nabla_{\mathbf{x}}\log{p(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
+-
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}\boldsymbol{\phi(\mathbf{x})}^\top
+\right)\right] \\
+=&amp; \arg\max_{\boldsymbol{\phi}} \mathbb{E}_{\mathbf{x}\sim q}\left[
+\text{trace}\left( \left(\nabla_{\mathbf{x}}\log{p(\mathbf{x})} -
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}\right)\boldsymbol{\phi(\mathbf{x})}^\top
+\right)\right],
+\end{align*}
+\]</span> 推导到这里其实已经很明显了，这就是两个函数关于分布<span class="math inline">\(q\)</span>的内积，如果先不考虑RKHS，此时公式(11)定义的问题的解为：
+<span class="math display">\[ \boldsymbol{\phi}^*_{q,p}(\mathbf{x}) =
+\nabla_{\mathbf{x}}\log{p(\mathbf{x})} -
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}. \tag{18} \]</span></p>
+<blockquote>
+<p>Q: 既然已经得到了方向函数的解，那为什么还要有RKHS限制? A:
+这是因为公式(18)的解涉及到了对演化分布的概率密度函数求梯度，而SVGD方法使用粒子群模拟分布<span class="math inline">\(q\)</span>，因此没法求梯度。</p>
+</blockquote>
+<blockquote>
+<p>Q: 如果不使用粒子群，而是直接参数化分布<span class="math inline">\(q\)</span>会怎样？ A:
+那么公式(17)的结论就是ELBO，SVGD方法坍缩为基于模型的VI方法。</p>
+</blockquote>
+<p>需要注意到，SVGD方法得到的方向函数，即公式(12)，是不用计算<span class="math inline">\(q\)</span>的梯度的，相反计算的是核函数<span class="math inline">\(k\)</span>的梯度。</p>
+<p>接下来我们再看SVGD方法求解的方向函数，即公式(12)的含义是什么（为了省点事我去掉了下标和上标）。我们还是利用
+stein class 的性质，可以得到如下结论： <span class="math display">\[
+\begin{align*}{\tag{19}}
+\boldsymbol{\phi}(\mathbf{x}) =&amp; \mathbb{E}_{\mathbf{y}\sim q}\left[
+k(\mathbf{y}, \mathbf{x})\nabla_{\mathbf{y}}\log{p(\mathbf{y})} +
+\nabla_{\mathbf{y}}k(\mathbf{y}, \mathbf{x}) \right] \\
+=&amp; \mathbb{E}_{\mathbf{y}\sim q}\left[ k(\mathbf{y}, \mathbf{x})
+\left(\nabla_{\mathbf{y}}\log{p(\mathbf{y})} -
+\nabla_{\mathbf{y}}\log{q(\mathbf{y})} \right)\right].
+\end{align*}
+\]</span></p>
+<p>将公式(19)带入公式(17)的结论，可以得到： <span class="math display">\[
+\begin{align*}{\tag{20}}
+\mathbb{E}_{\mathbf{x}\sim q, \mathbf{y}\sim q}\left[
+\left(\nabla_{\mathbf{x}}\log{p(\mathbf{x})} -
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}\right)^\top k(\mathbf{y},
+\mathbf{x})\left(\nabla_{\mathbf{x}}\log{p(\mathbf{x})} -
+\nabla_{\mathbf{x}}\log{q(\mathbf{x})}\right) \right].
+\end{align*}
+\]</span></p>
+<p>公式(20)是RKHS空间中一个函数的 norm，这个函数的形式是： <span class="math display">\[f(\cdot) =
+\int{\left(\nabla_{\mathbf{z}}\log{p(\mathbf{z})} -
+\nabla_{\mathbf{z}}\log{q(\mathbf{z})}\right)k(\mathbf{z},
+\cdot)\mathrm{d}\mathbf{z}}, \tag{21}\]</span> 这里我用了<span class="math inline">\(\mathbf{z}\)</span>符号，只是为了区分<span class="math inline">\(\mathbf{x}\)</span>和<span class="math inline">\(\mathbf{y}\)</span>，避免误解。公式(21)表达了用核函数<span class="math inline">\(k\)</span>将方向函数(18)映射到RKHS空间的过程，或者说，公式(21)是公式(18)的smooth版本，使用分部积分法，可以从公式(21)推导出SVGD的解，即公式(12)。</p>
+<p>完毕。</p>
+<blockquote>
+<p>上面的这些推理我没能在硕士期间完全搞明白，相反我通常是从梯度流角度来解释SVGD的，不过现在毕业了，我仅仅花了半个晚上的时间就正面理解了SVGD，真是神奇:)</p>
+</blockquote>
 
     </div>
 
@@ -451,7 +589,8 @@ q}\left[\nabla_{\epsilon}\log{p_{\left[\mathbf{T}^{-1}\right]}(\mathbf{x})}\righ
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">2.</span> <span class="nav-text">问题设定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B1%82%E8%A7%A3%E6%80%9D%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">求解思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%BC%8F%E6%8E%A8%E5%AF%BC"><span class="nav-number">4.</span> <span class="nav-text">公式推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#theorem-3.1"><span class="nav-number">4.1.</span> <span class="nav-text">Theorem 3.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%81%E6%98%8E-theorem-3.1"><span class="nav-number">4.2.</span> <span class="nav-text">证明 Theorem 3.1</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">背景介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">2.</span> <span class="nav-text">问题设定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B1%82%E8%A7%A3%E6%80%9D%E8%B7%AF"><span class="nav-number">3.</span> <span class="nav-text">求解思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%BC%8F%E6%8E%A8%E5%AF%BC"><span class="nav-number">4.</span> <span class="nav-text">公式推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#theorem-3.1"><span class="nav-number">4.1.</span> <span class="nav-text">Theorem 3.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%81%E6%98%8E-theorem-3.1"><span class="nav-number">4.2.</span> <span class="nav-text">证明 Theorem 3.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#theorem-3.1%E7%9A%84%E6%84%8F%E4%B9%89"><span class="nav-number">4.3.</span> <span class="nav-text">Theorem 3.1的意义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lemma-3.2"><span class="nav-number">4.4.</span> <span class="nav-text">Lemma 3.2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E7%90%86%E8%A7%A3lemma-3.2"><span class="nav-number">4.5.</span> <span class="nav-text">如何理解Lemma 3.2</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#stein-class-and-steins-operator"><span class="nav-number">4.5.0.1.</span> <span class="nav-text">Stein class and Stein&#39;s
+operator</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%96%B9%E5%90%91%E5%87%BD%E6%95%B0%E7%9A%84%E8%8C%83%E6%95%B0"><span class="nav-number">4.5.0.2.</span> <span class="nav-text">方向函数的范数</span></a></li></ol></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
