@@ -28,7 +28,7 @@
 <meta property="og:description" content="本文讲述了如何构建一个能同时计算Precision和Recall的 Text2Image Benchmark">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-11-04T13:20:00.000Z">
-<meta property="article:modified_time" content="2023-12-09T15:07:37.034Z">
+<meta property="article:modified_time" content="2023-12-10T15:51:52.552Z">
 <meta property="article:author" content="Li zhijian">
 <meta property="article:tag" content="LLM">
 <meta property="article:tag" content="CLIP">
@@ -188,7 +188,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-12-09 23:07:37" itemprop="dateModified" datetime="2023-12-09T23:07:37+08:00">2023-12-09</time>
+                <time title="Modified: 2023-12-10 23:51:52" itemprop="dateModified" datetime="2023-12-10T23:51:52+08:00">2023-12-10</time>
               </span>
 
           
@@ -264,8 +264,19 @@ train过了，在同一个domain，所以指标上会比较好看，但是很难
 此外，基于上述思想，使用打标签系统构建的评测数据集是有很好的可扩展性的，即使初版的标签树很简单，就如上述的“白天”和“黑夜”的例子，在后续依然可以持续完善标签树的复杂度，丰富测试的问询Query集合，并且无需最图片集合做出修改。</p>
 <p>但是，构建这个一个值得信赖的标签系统是很困难的，因此我在第一次构建评测数据集时放弃了测试Precision指标。
 我的思路回到了开源benchmark的做法，即为图文构建一对一的绑定关系，先搞定测试Recall指标。
-然而正如上述提到的前提，我只有图片数据，因此一个自然的想法是，<strong>能不能借助LLM的力量为图片批量生成较高质量的caption？</strong></p>
+然而正如上述提到的前提，我只有图片数据，因此一个自然的想法是，<strong>能不能借助LLM的力量为图片批量生成较高质量的caption？</strong>以LLM生成的caption作为问询Query，测试文搜图系统在特定domain的Recall性能。</p>
 <h2 id="模型选择">模型选择</h2>
+<p>在当前时间节点（23年9月），我主要考虑了以下几个可用于图像描述的多模态模型：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://huggingface.co/Salesforce/blip2-opt-2.7b"><code>Salesforce的Blip2系列</code></a>:
+blip系列是现在这段时间内很有代表性的多模态模型架构了，很多多模态图文大模型都是基于blip的结构。但是这个huggingface上的官方blip仓库只提供了图片英文caption功能，不适用于我当前的中文文搜图场景。</li>
+<li><a target="_blank" rel="noopener" href="https://huggingface.co/IDEA-CCNL/Ziya-BLIP2-14B-Visual-v1"><code>Ziya-BLIP2-14B-Visual-v1</code></a>:
+也是基于blip2结构的图文多模态大模型，支持中文，不过我最后没有选择该模型，原因是需要申请LLama的权重，在此期间我尝试了其他模型，效果基本符合要求，因此没有采用<code>Ziya</code>。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/THUDM/VisualGLM-6B"><code>VisualGLM-6B</code></a>:
+和知名的<code>ChatGLM</code>同源，试用后发现问答和详细图片内容描述还是很不错的。但是我的场景需要大约40字描述图片的主要内容，语言风格尽量朴实，类似<code>COCO-CN</code>数据集的caption风格。但是<code>VisualGLM-6B</code>的图片描述类似写作文，加入了很多不必要的细节描述以及个人化猜测，而且这些行为很难通过修改prompt避免（至少我自己尝试了不同prompt后发现差别不大），因此放弃使用该模型。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/QwenLM/Qwen-VL"><code>Qwen-VL</code></a>:
+这个注意要使用23年9月25日以后的版本，和第一版差别比较大。该版本和<code>VisualGLM-6B</code>相比，在我这个场景下的差异主要是<code>Qwen-VL</code>更能遵循指令要求，比较容易控制生成的图片caption的风格和详略程度，因此最后选择了该模型。</li>
+</ul>
 <h2 id="图片数据清洗">图片数据清洗</h2>
 <h2 id="prompt模板和generation参数">Prompt模板和Generation参数</h2>
 
